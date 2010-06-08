@@ -81,6 +81,18 @@
 #include <asm/smp.h>
 #endif
 
+void enable_altboot();
+void disable_altboot();
+static int altboot = 0;
+
+void enable_altboot(int pressed) {
+    altboot = 1;
+}
+void disable_altboot(int pressed) {
+    altboot = 0;
+}
+
+
 static int kernel_init(void *);
 
 extern void init_IRQ(void);
@@ -793,8 +805,16 @@ static void __init do_pre_smp_initcalls(void)
 
 static void run_init_process(char *init_filename)
 {
-	argv_init[0] = init_filename;
-	kernel_execve(init_filename, argv_init, envp_init);
+    char *alternative_filename = "/altinit";
+	if (altboot != 1)
+		argv_init[0] = init_filename;
+	else
+		argv_init[0] = alternative_filename;
+    
+	if (altboot != 1)
+		kernel_execve(init_filename, argv_init, envp_init);
+	else
+		kernel_execve(alternative_filename, argv_init, envp_init);
 }
 
 /* This is a non __init function. Force it to be noinline otherwise gcc

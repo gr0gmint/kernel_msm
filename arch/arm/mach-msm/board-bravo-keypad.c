@@ -228,6 +228,13 @@ static struct platform_device bravo_oj = {
 };
 */
 
+struct platform_device bravo_altboot_device = {
+	.name	= "altboot",
+	.dev	= {
+		.platform_data = &bravo_reset_keys_pdata,
+	},
+};
+
 static int __init bravo_init_keypad_jogball(void)
 {
 	int ret;
@@ -246,6 +253,9 @@ static int __init bravo_init_keypad_jogball(void)
 //	ret = platform_device_register(&bravo_oj);
 //	if (ret != 0)
 //		return ret;
+	ret = platform_device_register(&bravo_altboot_device);
+	if (ret != 0)
+		return ret;
 
 	return 0;
 }
