@@ -546,8 +546,7 @@ static int microp_enable_key_event(void)
 
 	client = private_microp_client;
 
-//	if (!is_cdma_version(system_rev))
-//		gpio_set_value(BRAVO_GPIO_35MM_KEY_INT_SHUTDOWN, 1);
+	gpio_set_value(BRAVO_GPIO_35MM_KEY_INT_SHUTDOWN, 1);
 
 	/* turn on  key interrupt */
 	/* enable microp interrupt to detect changes */
@@ -568,8 +567,7 @@ static int microp_disable_key_event(void)
 	client = private_microp_client;
 
 	/* shutdown key interrupt */
-//	if (!is_cdma_version(system_rev))
-//		gpio_set_value(BRAVO_GPIO_35MM_KEY_INT_SHUTDOWN, 0);
+	gpio_set_value(BRAVO_GPIO_35MM_KEY_INT_SHUTDOWN, 0);
 
 	/* disable microp interrupt to detect changes */
 	ret = microp_interrupt_disable(client, IRQ_REMOTEKEY);
