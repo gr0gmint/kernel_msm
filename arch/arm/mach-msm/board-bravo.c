@@ -992,6 +992,11 @@ static void __init bravo_init(void)
 
 	printk("bravo_init() revision=%d\n", system_rev);
 
+	if (system_rev >= 2) {
+		mdp_pmem_pdata.start = MSM_PMEM_MDP_BASE + MSM_MEM_128MB_OFFSET;
+		android_pmem_adsp_pdata.start = MSM_PMEM_ADSP_BASE + MSM_MEM_128MB_OFFSET;
+	}
+
 	msm_hw_reset_hook = bravo_reset;
 
 	msm_acpu_clock_init(&bravo_clock_data);
@@ -1044,13 +1049,28 @@ static void __init bravo_init(void)
 static void __init bravo_fixup(struct machine_desc *desc, struct tag *tags,
 				 char **cmdline, struct meminfo *mi)
 {
+	int bravo_system_rev = 0, find = 0;
+	struct tag *t = (struct tag *)tags;
+
+	for (; t->hdr.size; t = tag_next(t)) {
+		if (t->hdr.tag == ATAG_REVISION) {
+			find = 1;
+			break;
+		}
+	}
+	if (find)
+		bravo_system_rev = t->u.revision.rev;
+
 	mi->nr_banks = 2;
-	mi->bank[0].start = PHYS_OFFSET;
-	mi->bank[0].node = PHYS_TO_NID(PHYS_OFFSET);
-	mi->bank[0].size = (219*1024*1024);
-	mi->bank[1].start = MSM_HIGHMEM_BASE;
-	mi->bank[1].node = PHYS_TO_NID(MSM_HIGHMEM_BASE);
-	mi->bank[1].size = MSM_HIGHMEM_SIZE;
+	mi->bank[0].start = MSM_EBI1_BANK0_BASE;
+	mi->bank[0].node = PHYS_TO_NID(MSM_EBI1_BANK0_BASE);
+	mi->bank[0].size = MSM_EBI1_BANK0_SIZE;
+	mi->bank[1].start = MSM_EBI1_BANK1_BASE;
+	mi->bank[1].node = PHYS_TO_NID(MSM_EBI1_BANK1_BASE);
+	mi->bank[1].size = MSM_EBI1_BANK1_SIZE;
+	if (bravo_system_rev >= 2) {
+		mi->bank[1].size = MSM_EBI1_BANK1_SIZE + MSM_MEM_128MB_OFFSET;
+	}
 }
 
 static void __init bravo_map_io(void)
