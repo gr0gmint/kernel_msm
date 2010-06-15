@@ -1076,18 +1076,12 @@ static void microp_led_jogball_brightness_set_work(struct work_struct *work)
 static int microp_i2c_auto_backlight_mode(struct i2c_client *client,
 					    uint8_t enabled)
 {
-	uint8_t data[2];
-	int ret = 0;
+        int ret = 0;
 
-	data[0] = 0;
 	if (enabled)
-		data[1] = 1;
+		ret = microp_interrupt_enable(client, IRQ_LSENSOR);
 	else
-		data[1] = 0;
-
-	ret = i2c_write_block(client, MICROP_I2C_WCMD_AUTO_BL_CTL, data, 2);
-	if (ret != 0)
-		pr_err("%s: set auto light sensor fail\n", __func__);
+		ret = microp_interrupt_disable(client, IRQ_LSENSOR);
 
 	return ret;
 }
