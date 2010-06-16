@@ -279,7 +279,7 @@ static struct platform_device *devices[] __initdata = {
 #endif
 	&msm_device_smd,
 	&msm_device_nand,
-	&msm_device_hsusb,
+	//&msm_device_hsusb,
 	&usb_mass_storage_device,
 	&android_usb_device,
 	&fish_battery_device,
@@ -314,7 +314,7 @@ static void __init swordfish_init(void)
 	msm_serial_debug_init(MSM_UART3_PHYS, INT_UART3,
 			      &msm_device_uart3.dev, 1);
 #endif
-	msm_device_hsusb.dev.platform_data = &msm_hsusb_pdata;
+	//msm_device_hsusb.dev.platform_data = &msm_hsusb_pdata;
 	msm_device_touchscreen.dev.platform_data = &swordfish_ts_pdata;
 	platform_add_devices(devices, ARRAY_SIZE(devices));
 	msm_hsusb_set_vbus_state(1);
