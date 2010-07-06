@@ -3,6 +3,8 @@
  * Copyright (C) 2009 Google, Inc.
  * Copyright (C) 2009 HTC Corporation.
  * Author: Dima Zavin <dima@android.com>
+ * Copyright (C) 2010 Giulio Cervera <giulio.cervera@gmail.com>
+ * Copyright (C) 2010 Diogo Ferreira <diogo@underdev.org>
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -15,7 +17,6 @@
  *
  */
 
-//#include <linux/cy8c_tmg_ts.h>
 #include <linux/delay.h>
 #include <linux/gpio.h>
 #include <linux/i2c.h>
@@ -58,8 +59,6 @@
 #include "devices.h"
 #include "proc_comm.h"
 #include "board-bravo-flashlight.h"
-//#include "board-bravo-tpa2018d1.h"
-//#include "board-bravo-smb329.h"
 
 static uint debug_uart;
 

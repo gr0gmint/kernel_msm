@@ -2,6 +2,8 @@
  *
  * Copyright (C) 2009 Google, Inc
  * Copyright (C) 2009 HTC Corporation.
+ * Copyright (C) 2010 Giulio Cervera <giulio.cervera@gmail.com>
+ * Copyright (C) 2010 Diogo Ferreira <diogo@underdev.org>
  *
  * Author: Dima Zavin <dima@android.com>
  *
@@ -21,8 +23,6 @@
 #include <linux/keyreset.h>
 #include <linux/platform_device.h>
 #include <mach/vreg.h>
-//#include <mach/atmega_microp.h>
-//#include <linux/curcial_oj.h>
 
 #include <asm/mach-types.h>
 

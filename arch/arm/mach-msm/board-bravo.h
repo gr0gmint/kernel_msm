@@ -2,6 +2,8 @@
  *
  * Copyright (C) 2009 HTC Corporation.
  * Author: Haley Teng <Haley_Teng@htc.com>
+ * Copyright (C) 2010 Giulio Cervera <giulio.cervera@gmail.com>
+ * Copyright (C) 2010 Diogo Ferreira <diogo@underdev.org>
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and

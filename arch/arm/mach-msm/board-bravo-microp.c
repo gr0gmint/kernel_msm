@@ -1,6 +1,9 @@
 /* board-bravo-microp.c
+ *
  * Copyright (C) 2009 Google.
  * Copyright (C) 2009 HTC Corporation.
+ * Copyright (C) 2010 Giulio Cervera <giulio.cervera@gmail.com>
+ * Copyright (C) 2010 Diogo Ferreira <diogo@underdev.org>
  *
  * The Microp on bravo is an i2c device that supports
  * the following functions
@@ -220,6 +223,7 @@ struct microp_i2c_client_data {
 	uint32_t als_kadc;
 	uint32_t als_gadc;
 	uint8_t als_calibrating;
+	uint32_t spi_devices_enabled;
 };
 
 static char *hex2string(uint8_t *data, int len)
@@ -977,6 +981,34 @@ static void microp_led_brightness_set_work(struct work_struct *work)
 	}
 }
 
+static void microp_led_brightness_gpo_set_work(struct work_struct *work)
+{
+	unsigned long flags;
+	struct microp_led_data *ldata =
+		container_of(work, struct microp_led_data, brightness_work);
+	struct led_classdev *led_cdev = &ldata->ldev;
+
+	struct i2c_client *client = to_i2c_client(led_cdev->dev->parent);
+
+	enum led_brightness brightness;
+	int ret;
+	uint8_t addr, data[3] = {0x00,0x02,0x00}, enable;
+
+	spin_lock_irqsave(&ldata->brightness_lock, flags);
+	brightness = ldata->brightness;
+	spin_unlock_irqrestore(&ldata->brightness_lock, flags);
+
+	enable = brightness ? 1 : 0;
+	if (enable)
+		addr = MICROP_I2C_WCMD_GPO_LED_STATUS_EN;
+	else
+		addr = MICROP_I2C_WCMD_GPO_LED_STATUS_DIS;
+
+	ret = microp_i2c_write (addr, data, 3);
+        if (ret < 0)
+                pr_err("%s failed on set gpo led mode:%d\n", __func__, brightness);
+}
+
 struct device_attribute *green_amber_attrs[] = {
 	&dev_attr_blink,
 	&dev_attr_off_timer,
@@ -1357,13 +1389,28 @@ static int microp_spi_enable(uint8_t on)
 	return ret;
 }
 
+/* Lookup active SPI devices and only turn it off when no device
+ * is using it
+ * */
 int microp_spi_vote_enable(int spi_device, uint8_t enable) {
 	//XXX need to check that all that crap in the HTC kernel is needed
 	struct i2c_client *client = private_microp_client;
+	struct microp_i2c_client_data *cdata = i2c_get_clientdata(client);
 	int ret;
 
 	if (spi_device == SPI_OJ)
 		microp_oj_intr_enable(client, enable);
+
+	/* Add/remove it from the poll */
+	if (enable)
+		cdata->spi_devices_enabled |= spi_device;
+	else
+		cdata->spi_devices_enabled &= ~spi_device;
+
+	if (cdata->spi_devices_enabled)
+		enable = 1;
+	else enable = 0;
+
 
 	ret = microp_spi_enable(enable);
 	return ret;
@@ -1479,7 +1526,7 @@ static int gsensor_init_hw(void)
 
 	pr_debug("%s\n", __func__);
 
-	microp_spi_enable(1);
+	microp_spi_vote_enable(SPI_GSENSOR, 1);
 
 	ret = gsensor_read_reg(RANGE_BWIDTH_REG, &reg);
 	if (ret < 0 )
@@ -1505,7 +1552,7 @@ static int bma150_set_mode(char mode)
 
 	pr_debug("%s mode = %d\n", __func__, mode);
 	if (mode == BMA_MODE_NORMAL)
-		microp_spi_enable(1);
+		microp_spi_vote_enable(SPI_GSENSOR, 1);
 
 
 	ret = gsensor_read_reg(SMB150_CTRL_REG, &reg);
@@ -1515,7 +1562,7 @@ static int bma150_set_mode(char mode)
 	ret = gsensor_write_reg(SMB150_CTRL_REG, reg);
 
 	if (mode == BMA_MODE_SLEEP)
-		microp_spi_enable(0);
+		microp_spi_vote_enable(SPI_GSENSOR, 0);
 
 	return ret;
 }
@@ -1932,12 +1979,6 @@ static struct {
 		.attrs		= green_amber_attrs,
 		.attr_cnt	= ARRAY_SIZE(green_amber_attrs)
 	},
-	[AMBER_LED] = {
-		.name		= "amber",
-		.led_set_work   = microp_led_brightness_set_work,
-		.attrs		= green_amber_attrs,
-		.attr_cnt	= ARRAY_SIZE(green_amber_attrs)
-	},
 	[RED_LED] = {
 		.name		= "red",
 		.led_set_work   = microp_led_brightness_set_work,
@@ -1946,9 +1987,9 @@ static struct {
 	},
 	[BLUE_LED] = {
 		.name		= "blue",
-		.led_set_work   = microp_led_brightness_set_work,
-		.attrs		= green_amber_attrs,
-		.attr_cnt	= ARRAY_SIZE(green_amber_attrs)
+		.led_set_work   = microp_led_brightness_gpo_set_work,
+		.attrs		= NULL,
+		.attr_cnt	= 0
 	},
 	[JOGBALL_LED] = {
 		.name		= "jogball-backlight",
@@ -2005,6 +2046,7 @@ static int microp_i2c_probe(struct i2c_client *client,
 	cdata->microp_is_suspend = 0;
 	cdata->auto_backlight_enabled = 0;
 	cdata->light_sensor_enabled = 0;
+	cdata->spi_devices_enabled = 0;
 
 	wake_lock_init(&microp_i2c_wakelock, WAKE_LOCK_SUSPEND,
 			 "microp_i2c_present");
